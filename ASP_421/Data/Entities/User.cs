@@ -1,4 +1,5 @@
 ﻿using System.Reflection.Metadata;
+using System.Text.Json.Serialization;
 
 namespace ASP_421.Data.Entities
 {
@@ -14,6 +15,7 @@ namespace ASP_421.Data.Entities
         //Inverse Navigation properties
 
         //public IEnumerable<UserAccess> Accesses { get; set; } = [];
+        [JsonIgnore]
         public ICollection<UserAccess> Accesses { get; set; } = new List<UserAccess>();
 
     }

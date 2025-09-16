@@ -1,4 +1,25 @@
-﻿<!DOCTYPE html>
+﻿@using System.Security.Claims
+@{
+    int? days = null;
+    if(User.Identity?.IsAuthenticated==true)
+    {
+        var dobStr = User.FindFirst(ClaimTypes.DateOfBirth)?.Value;
+        if(DateTime.TryParse(dobStr,out var dob))
+        {
+            var today = DateTime.UtcNow.Date;
+            var next = new DateTime(today.Year, dob.Month, dob.Day);
+            if (next < today) next = next.AddYears(1);
+            days = (next - today).Days;
+        }
+    }
+}
+@if(days!=null)
+{
+    <div class="small text-muted mb-2">
+    До Вашого дня народження залишилось @days днів
+    </div>
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -36,11 +57,42 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
                     </ul>
-                    <a class="nav-link text-dark" asp-controller="User" asp-action="SignUp">
-                        <i class="bi bi-person-add"></i>
-                    </a>
+                    @if (Context.User.Identity?.IsAuthenticated ?? false)
+                    {
+                        String name = Context.User
+                        .Claims
+                        .First(c => c.Type == ClaimTypes.Name)
+                        .Value;
+
+                        String login = Context.User
+                        .Claims
+                        .First(c => c.Type == ClaimTypes.NameIdentifier)
+                        .Value;
+
+                        <div>
+                            <a asp-controller="User" 
+                            asp-action="Profile"
+                            asp-route-id="@login"
+                            class="rounded-circle bg-info px-2 mx-2 text-decoration-none text-body" title="@name">@(name[0])</a>
+                            <a class="text-dark btn btn-outline-secondary" href="?logout">
+                                <i class="bi bi-box-arrow-right"></i>
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div>
+                            <a class="text-dark btn btn-outline-secondary" asp-controller="User" asp-action="SignUp">
+                                <i class="bi bi-person-add"></i>
+                            </a>
+                            <!-- Button trigger modal -->
+                            <button type="button" class="btn btn-outline-secondary"
+                                    data-bs-toggle="modal" data-bs-target="#authModal">
+                                <i class="bi bi-box-arrow-in-right"></i>
+                            </button>
+                        </div>
+                    }
                 </div>
-                 
             </div>
         </nav>
     </header>
@@ -55,9 +107,51 @@
             &copy; 2025 - ASP_421 - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
+
+    <!-- Modal -->
+    <div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="auth-form" method="post" action="/auth/signin">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="authModalLabel">Автентифікація</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @* <form id="auth-form"> before correction*@ 
+                        <div id="auth-errors" class="alert alert-danger d-none" role="alert"></div>
+                        
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="auth-login-addon">
+                                <i class="bi bi-key"></i>
+                            </span>
+                            <input name="auth-login"
+                                   type="text" class="form-control" placeholder="Логін"
+                                   aria-label="Логін" aria-describedby="auth-login-addon" />
+                        </div>
+
+                        <div class="input-group mb-3">
+                            <span class="input-group-text" id="auth-password-addon">
+                                <i class="bi bi-lock"></i>
+                            </span>
+                            <input name="auth-password"
+                                   type="password" class="form-control" placeholder="Пароль"
+                                   aria-label="Пароль" aria-describedby="auth-password-addon" />
+                        </div>
+
+                
+                </div>
+    <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Скасувати</button>
+    <button type="submit" form="auth-form" class="btn btn-primary">Вхід</button>
+    </div>
+    </form>
+    </div>
+    </div>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/auth.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

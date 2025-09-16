@@ -20,3 +20,7 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+[contenteditable]{
+    border: 1px solid lightgray;
+}

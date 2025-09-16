@@ -1,7 +1,9 @@
 using ASP_421.Data;
 using ASP_421.Data.Entities;
+using ASP_421.Data.MiddleWare;
 using ASP_421.Services.KDF;
 using ASP_421.Services.Random;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,7 +32,7 @@ builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromSeconds(10);
+    options.IdleTimeout = TimeSpan.FromSeconds(100);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
@@ -40,6 +42,13 @@ builder.Services.AddScoped<ASP_421.Infasctructure.VisitLogger>();
 builder.Services.AddControllersWithViews(o =>
     {
         o.Filters.Add<ASP_421.Infasctructure.VisitLogger>();
+    });
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(opt =>
+    {
+        opt.LoginPath = "/";
+        opt.AccessDeniedPath = "/";
     });
 var app = builder.Build();
 
@@ -55,10 +64,13 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+app.UseAuthentication();
 
 app.UseAuthorization();
 
 app.UseSession();
+
+app.UseAuthSession();
 
 app.MapControllerRoute(
     name: "default",

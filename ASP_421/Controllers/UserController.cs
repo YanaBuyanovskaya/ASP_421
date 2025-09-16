@@ -1,8 +1,11 @@
 ﻿using ASP_421.Data;
 using ASP_421.Models.User;
 using ASP_421.Services.KDF;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
+using System.Text;
 using System.Text.Json;
 
 
@@ -16,6 +19,158 @@ namespace ASP_421.Controllers
         private readonly IKDFService _kdfService= kdfService;
 
         const String RegisterKey = "RegisterFormModel";
+
+        public IActionResult Profile([FromRoute] String id)
+        {
+            UserProfileViewModel viewModel = new();
+
+            viewModel.User = _dataContext
+                .UserAccesses
+                .Include(ua => ua.User)
+                .AsNoTracking()
+                .FirstOrDefault(ua => ua.Login == id)
+                ?.User;
+
+            String? authUserId = HttpContext
+                .User
+                .Claims
+                .FirstOrDefault(c => c.Type == "Id")
+                ?.Value;
+
+            viewModel.IsPersonal = authUserId != null &&
+                authUserId == viewModel.User?.Id.ToString();
+
+            return View(viewModel);
+        }
+
+        [HttpPatch]
+        public JsonResult Update([FromBody] JsonElement json)
+        {
+           if(json.GetPropertyCount()==0)
+            {
+                return Json(new
+                {
+                    Status = 401,
+                    Data = "Missing Authorization header "
+                });
+            }
+           if(!(HttpContext.User.Identity?.IsAuthenticated ?? false))
+            {
+                return Json(new
+                {
+                    Status = 401,
+                    Data = "Unauthorized"
+                });
+            }
+            String id = HttpContext.User.Claims.First(c => c.Type == "Id").Value;
+            Data.Entities.User user = _dataContext
+                 .Users
+                 .Find(Guid.Parse(id))!;
+
+            if(json.TryGetProperty("Name", out JsonElement name))
+            {
+                user.Name = name.GetString()!;
+            }
+
+            if (json.TryGetProperty("Email", out JsonElement email))
+            {
+                user.Email = email.GetString()!;
+            }
+            _dataContext.SaveChanges();
+            return Json(new
+            {
+                Status = 200,
+                Data = "Ok"
+            });
+        }
+
+        [HttpDelete]
+        public JsonResult Delete()
+        {//перевірити чи користувач авторизований
+            //визначити його ай ді та відшукати об'єкт БД
+            //видалити персональні дані
+            //встановити дату видалення DeletedAt у поточний момент
+            //save changes 
+
+            return Json(new
+            {
+                Status = 200,
+                Data = "Ok"
+            });
+        }
+        public JsonResult SignIn()
+        {
+            //Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
+
+
+            String header = // Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
+                    HttpContext.Request.Headers.Authorization.ToString();
+            if (String.IsNullOrEmpty(header))
+            {
+                return Json(new
+                {
+                    Status = 401,
+                    Data = "Missing Authorization header "
+                });
+            }
+            String scheme = "Basic ";
+            if (!header.StartsWith(scheme))
+            {
+                return Json(new
+                {
+                    Status = 401,
+                    Data = "Invalid scheme. Required: " + scheme
+                });
+            }
+
+            String credentials = // QWxhZGRpbjpvcGVuIHNlc2FtZQ==
+                header[scheme.Length..];
+            String userPass =    // Aladdin: open sesame
+                Encoding.UTF8.GetString(
+                Convert.FromBase64String(credentials));
+
+            String[] parts = userPass.Split(':', 2);
+            String login = parts[0];        //Aladdin
+            String password = parts[1];     //open sesame
+
+            var userAccess =
+                _dataContext
+                .UserAccesses
+                .AsNoTracking()          // не моніторити зміни
+                .Include(ua => ua.User) //заповнення навігаційної властивості
+                .FirstOrDefault
+                (ua => ua.Login == login);
+
+            if (userAccess == null)
+            {
+                return Json(new
+                {
+                    Status = 401,
+                    Data = "Credentials rejected"
+                });
+            }
+
+            if (_kdfService.DK(password, userAccess.Salt) != userAccess.Dk)
+            {
+                return Json(new
+                {
+                    Status = 401,
+                    Data = "Credentials rejected."
+
+                });
+            }
+
+            // користувач пройшов автентифікацію, зберігаємо у сесії
+            HttpContext.Session.SetString(
+                "SignIn",
+                JsonSerializer.Serialize(userAccess));
+
+            return Json(new
+            {
+                Status = 200,
+                Data = "Authorized"
+            });
+        }
         public IActionResult SignUp()
         {
             UserSignUpViewModel viewModel = new();
