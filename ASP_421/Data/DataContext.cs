@@ -1,4 +1,5 @@
 ﻿using ASP_421.Data.Configuration;
+using ASP_421.Data.Entities;
 using Microsoft.EntityFrameworkCore;
 namespace ASP_421.Data
 {
@@ -9,6 +10,8 @@ namespace ASP_421.Data
         public DbSet<Entities.UserAccess> UserAccesses { get; set; }
         public DbSet<Entities.UserRole> UserRoles { get; set; }
 
+        public DbSet<Entities.Product> Products { get; set; }
+        public DbSet<Entities.ProductGroup> ProductGroups { get; set; }
         public DbSet<ASP_421.Data.Entities.Request> Requests { get; set; } = null!;
        
 
@@ -31,6 +34,19 @@ namespace ASP_421.Data
             modelBuilder.ApplyConfiguration(new UserRoleConfiguration());
             modelBuilder.ApplyConfiguration(new UserConfiguration());
             modelBuilder.ApplyConfiguration(new ASP_421.Data.Configuration.RequestConfiguration());
+            modelBuilder.Entity<ASP_421.Data.Entities.User>()
+                .HasQueryFilter(u => u.DeletedAt == null);
+            modelBuilder.Entity<Entities.Product>()
+                .HasIndex(p => p.Slug)
+                .IsUnique();
+            modelBuilder.Entity<Entities.Product>()
+                .HasOne(p => p.Group)
+                .WithMany(g => g.Products)
+                .HasForeignKey(p => p.GroupId);
+            modelBuilder.Entity<Entities.ProductGroup>()
+                .HasIndex(p => p.Slug)
+                .IsUnique();
+            
         }
     }
 }

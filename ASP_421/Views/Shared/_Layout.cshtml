@@ -1,4 +1,6 @@
-﻿@using System.Security.Claims
+﻿@using Microsoft.AspNetCore.Antiforgery
+@inject IAntiforgery Antiforgery
+@using System.Security.Claims
 @{
     int? days = null;
     if(User.Identity?.IsAuthenticated==true)
@@ -29,6 +31,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ASP_421.styles.css" asp-append-version="true" />
+    <meta name="csrf-token" content="@(Antiforgery.GetAndStoreTokens(Context).RequestToken)" />
+    @RenderSection("Head", required: false)
 </head>
 <body>
     <header>
@@ -56,6 +60,12 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="User" asp-action="Cabinet">Cabinet</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Shop" asp-action="Index">Крамниця</a>
+                        </li>
                     </ul>
                     @if (Context.User.Identity?.IsAuthenticated ?? false)
                     {
@@ -70,6 +80,12 @@
                         .Value;
 
                         <div>
+                            <a asp-controller="Shop"
+                               asp-action="Admin"
+                               class="btn btn-outline-secondary text-decoration-none text-body"
+                               title="Панель управління"><i class="bi bi-speedometer2"></i>
+                               </a>
+
                             <a asp-controller="User" 
                             asp-action="Profile"
                             asp-route-id="@login"
@@ -152,6 +168,7 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/auth.js"></script>
+    <script src="~/js/shop.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

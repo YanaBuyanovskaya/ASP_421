@@ -1,0 +1,60 @@
+﻿@{
+    ViewData["Title"] = "Shop";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Управління контентом</h1>
+
+    <div class="border m-3 p-4">
+        <form id="admin-group-form" method="post" enctype="multipart/form-data">
+            
+            @* //для того, щоб форма передавала дані треба 
+            вказати method=post та мультіпарт дата, 
+            якщо не передавати enctype, передасться тільки ім'я файлу *@
+            
+            <div class="row">
+                <div class="col">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="group-name-addon">
+                            <i class="bi bi-bookmark-check"></i>
+                        </span>
+                        <input name="group-name"
+                               type="text" class="form-control" placeholder="Назва групи"
+                               aria-label="Назва групи" aria-describedby="group-name-addon" />
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="group-description-addon">
+                            <i class="bi bi-chat-left-text"></i>
+                        </span>
+                        <input name="group-description"
+                               type="text" class="form-control" placeholder="Опис групи"
+                               aria-label="Опис групи" aria-describedby="group-description-addon" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text" id="group-slug-addon">
+                            <i class="bi bi-link"></i>
+                        </span>
+                        <input name="group-slug"
+                               type="text" class="form-control" placeholder="Посилання"
+                               aria-label="Посилання" aria-describedby="group-slug-addon" />
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="input-group mb-3">
+                        <label class="input-group-text" for="group-image"><i class="bi bi-image"></i></label>
+                        <input name="group-image" type="file" class="form-control" id="group-image" />
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Створити</button>
+        </form>
+    </div>
+
+</div>

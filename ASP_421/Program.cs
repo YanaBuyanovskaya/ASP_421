@@ -3,6 +3,7 @@ using ASP_421.Data.Entities;
 using ASP_421.Data.MiddleWare;
 using ASP_421.Services.KDF;
 using ASP_421.Services.Random;
+using ASP_421.Services.Storage;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,15 +17,13 @@ builder.Services.AddSingleton<IRandomService, DefaultRandomService>();
 builder.Services.AddSingleton<TimeStampService>();
 
 builder.Services.AddSingleton<IKDFService, PbKDFService>();
+builder.Services.AddSingleton<IStorageService, DiskStorageService>();
+
 
 builder.Services.AddDbContext<DataContext>(options =>
 options.UseSqlServer(
     builder.Configuration.GetConnectionString("DataContext"))
 );
-
-
-
-
 
 
 
@@ -66,11 +65,9 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 
-app.UseAuthorization();
-
 app.UseSession();
-
 app.UseAuthSession();
+app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",

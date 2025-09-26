@@ -1,0 +1,230 @@
+﻿@model ASP_421.Models.User.UserCabinetViewModel
+@using Microsoft.AspNetCore.Antiforgery
+@inject IAntiforgery Antiforgery
+
+@{
+    ViewData["Title"] = "User Cabinet";
+
+    var tokens = Antiforgery.GetAndStoreTokens(Context);
+    var anti = tokens.RequestToken!;
+
+    var isUa = Context.Request.Headers["Accept-Language"]
+    .ToString()
+    .StartsWith("uk", StringComparison.OrdinalIgnoreCase);
+
+    String T(string en, string uk) => isUa ? uk : en;
+
+    var labelEdit = T("Edit", "Редагувати");
+    var labelSave = T("Save", "Зберегти");
+    var labelDelete = T("Delete my data", "Видалити мої дані");
+    var labelStay = T("Stay until success", "Не виходити без успіху");
+    var labelOptim = T("Exit immediately, rollback on error", "Вийти одразу, у разі помилки повернути дані");
+    var labelName = T("Name", "Ім'я");
+    var labelEmail = T("Email", "Прізвище");
+    var labelBirthday = T("Birthday", "Дата народження");
+}
+
+<h2 class="mb-3">@ViewData["Title"]</h2>
+
+<div id="user-form"
+     data-user-id="@Model.User.Id"
+     data-anti="@anti"
+     class="card p-3 shadow-sm">
+
+     <div class="mb-3">
+         <label class="form-label">@labelName</label>
+         <input class="form-control" name="user-name" value="@Model.User.Name" disabled />
+         <small class="text-danger d-block" data-err="user-name"></small>
+     </div>
+
+    <div class="mb-3">
+        <label class="form-label">@labelEmail</label>
+        <input class="form-control" name="user-email" value="@Model.User.Email" disabled />
+        <small class="text-danger d-block" data-err="user-email"></small>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">@labelBirthday</label>
+        <input class="form-control" type="date" name="user-birthday" 
+        value="@(Model.User.BirthDate?.ToString("yyyy-MM-dd")) disabled />
+        <small class="text-danger d-block" data-err="user-birthday"></small>
+    </div>
+ 
+
+
+    <div class="d-flex flex-wrap gap-3 align-items-center">
+        <button id="editBtn"
+            class="btn btn-primary"
+            data-edit="@labelEdit"
+            data-save="@labelSave">@labelEdit
+        </button>
+
+    
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" name="mode" id="modeStay" value="stay" checked />
+        <label class="form-check-label" for="modeStay">@labelStay</label>
+    </div>
+    <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="mode" id="modeOptim" value="optimistic" checked />
+            <label class="form-check-label" for="modeOptim">@labelOptim</label>
+    </div>
+
+    <button id="deletedBtn" class="btn btn-outline-danger ms-auto">@labelDelete</button>
+
+    <div id="msg" class="mt-3"></div>
+</div>
+</div>
+
+@section Scripts{
+    <script>
+        (function(){
+            const card = document.getElementById('user-form');
+            const id = card.dataset.userId;
+            const anti = card.dataset.anti;
+
+            const editBtn = document.getElementById('editBtn');
+            const delBtn = document.getElementById('deleteBtn');
+            const inputs = Array.from(card.querySelectorAll('input[name^"user-"]'));
+            const msg = document.getElementById('msg');
+
+            const tEdit = editBtn.dataset.editBtn;
+            const tSave = editBtn.dataset.save;
+
+            let snapshot = null;
+
+            function clearFieldErrors()
+            {
+                inputs.forEach(id=> i.classList.remove('is-invalid'));
+                card.querySelectorAll('[data-err]').forEach(snapshot=>s.textContent='');
+            }
+
+            function showErrors(errors){
+                clearFieldErrors();
+                if(!errors || typeof errors !=='object') return;
+
+                const map={
+                    'Name': 'user-name',
+                    'Email': 'user-email',
+                    'Birthday': 'user-birthday',
+                    'Login': null,
+                    'Password': null
+                };
+
+                Object.keys(errors).forEach(keys=>{
+                    const inputName = map[keys ?? null;
+                        if(!inputName) return;
+                        const input = inputs.find(i=>i.name=== inputName);
+                        const span = card.querySelectorA(`[data-err="${inputName}"]`);
+                        if(input) input.classList.add('is-invalid');
+                        if(span) span.textContent = errors[k];
+                });
+
+                function setEditing(on){
+                    inputs.forEach(i=>i.ariaDisabled = !on);
+                    editBtn.textContent = on? tSave : tEdit;
+                }
+
+                editBtn.addEventListener('click', async() =>{
+                    const editing = (editBtn.textContent === tSave);
+                    const mode = (document.querySelector('input[name="mode"]:checked')?.value) || 'stay';
+
+                    if(!editing){
+                        snapshot = inputs.map(i=>({name: i.name, value: i.value}));
+                        clearFieldErrors();
+                        msg.innerHTML = '';
+                        setEditing(true);
+                        return;
+                    }
+
+                    //Натисли Save - шлемо POST /User/Update/{id}
+                    const form =new FormData();
+                    inputs.forEach(i=> form.append(i.name,i.value));
+
+                    const req = fetch(`/User/Update/${id}`, {
+                        method:'POST',
+                        headers: {'RequestVerificationToken': anti},
+                        body: form
+                    });
+
+                    if(mode=== 'optimistic')
+                    {
+                        setEditing(false);
+                    }
+
+                    try{
+                        const res = await req;
+
+                        if(!res.ok){
+                            let errors = null;
+                            try{ errors = await res.json();} catch{}
+                            showErrors(errors;
+                                throw new Error('Validation failed');
+                    }
+
+                    clearFieldErrors();
+                    const data = await res.json();
+                    msg.innerHTML= `<div class="alert alert-success">Зміни збережено</div>`;
+                    setEditing(false);
+
+                    if(data?.user){
+                        if(typeof data.user.name === 'string'){
+                            const i = inputs.find(x=>x.name === 'user-name'); if(i) i.value =data.user.name;
+                        }
+                        if(typeof data.user.email === 'string'){
+                            const i = inputs.find(x=>x.name === 'user-email'); if(i) i.value =data.user.email;
+                        }
+                        if(typeof data.user.birthDate) {
+                            const i = inputs.find(x=>x.name === 'user-birthday'); 
+                            if(i){
+                                const d =new Date(data.user.birthDate);
+                                if(!isNaN(d)){
+                                    const pad = n=>(n<10 ?'0'+n: '' + n);
+                                    i.value = d.getFullYear() + '-' + pad(d.getMonth()+1 + '-' + pad(d.getDate());
+                                }
+                            }
+                        }
+                    }
+                }catch(e){
+                    if(mode==='optimistic' && snapshot){
+                        snapshot.forEach(s=>{
+                            const inp = inputs.find(i=>i.name===s.name);
+                            if(inp) inp.value = s.value;
+                        });
+                    } else{
+                        setEditing(true;
+                    }
+                    if(msg.innerHTML.trim() === ''){
+                        msg.innerHTML = `<div class="alert alert-danger">Не вдалося зберегти зміни</div>`;
+                    }
+                }
+               });
+               delBtn.addEventListener('click', async()=>{
+                   if(!confirm('Підтвердити видалення ваших персональних даних?')) return;
+
+                   try{
+                       const res = await fetch(`/User/Delete/${id}`,{
+                           method:'DELETE',
+                           headers: {'RequestVerificationToken': anti}
+                       });
+
+                       let payload = null;
+                       try{payload = await res.json();} catch{}
+
+                       if(res.ok && payload?.status === 'deleted'){
+                           alert('Дані позначені як видалені. Вас буде перенаправлено на головну.');
+                           location.href = '/';
+                       }
+                       else{
+                           const text = payload? JSON.stringify(payload): `${res.status} ${res.statusText}`;
+                           msg.innerHTML = `<div class="alert alert-danger">Не вдалося видалити: ${text}</div>`;
+                       }
+                       } catch{
+                           msg.innerHTML = `<div class="alert alert-danger">Помилка мережі при видаленні</div>`;
+                       }
+               });
+            
+
+        })();
+    </script>
+}
+

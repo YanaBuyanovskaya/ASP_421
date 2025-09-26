@@ -17,9 +17,39 @@ namespace ASP_421.Controllers
     {
         private readonly DataContext _dataContext = dataContext;
         private readonly IKDFService _kdfService= kdfService;
+        
+        private const String SessionUserKey = "SessionUser"; 
 
         const String RegisterKey = "RegisterFormModel";
 
+        [HttpGet]
+        public IActionResult Cabinet(Guid? id)
+        {
+            var actualId = id ?? GetIdFromSession();
+            if (actualId == null || actualId == Guid.Empty)
+                return Unauthorized();
+
+            var user = _dataContext.Users.FirstOrDefault(u => u.Id == actualId.Value);
+            if (user == null) return NotFound();
+
+            var vm = new ASP_421.Models.User.UserCabinetViewModel
+            { 
+                User = user,
+                ValidationErrors = null,
+                IsEditing = false
+            };
+            return View(vm);
+
+        }
+
+        private Guid? GetIdFromSession()
+        {
+            var s = HttpContext.Session.GetString(SessionUserKey);
+            if (string.IsNullOrWhiteSpace(s)) return null;
+            var dto = JsonSerializer.Deserialize<SessionUserDto>(s);
+            return dto?.Id;
+        }
+        private record SessionUserDto(Guid Id, string Name, string Email);
         public IActionResult Profile([FromRoute] String id)
         {
             UserProfileViewModel viewModel = new();
@@ -85,17 +115,31 @@ namespace ASP_421.Controllers
         }
 
         [HttpDelete]
-        public JsonResult Delete()
+        public JsonResult Delete(Guid id)
         {//перевірити чи користувач авторизований
             //визначити його ай ді та відшукати об'єкт БД
             //видалити персональні дані
             //встановити дату видалення DeletedAt у поточний момент
             //save changes 
 
+            var user = _dataContext.Users.FirstOrDefault(u => u.Id == id);
+            if (user == null)
+            {
+                Response.StatusCode = 401;
+                return Json(new { status = "not_found", id });
+            }
+
+            user.DeletedAt = DateTime.UtcNow;
+            _dataContext.SaveChanges();
+
+            HttpContext.Session.Remove(SessionUserKey);
+                
+
             return Json(new
             {
                 Status = 200,
-                Data = "Ok"
+                Data = "Ok",
+                deletedAt = user.DeletedAt
             });
         }
         public JsonResult SignIn()
@@ -283,6 +327,13 @@ namespace ASP_421.Controllers
                 res[nameof(formModel.Email)] = "Пошта має бути зі знаком @!";
             }
 
+            else if(_dataContext.UserAccesses
+                .Include(ua=>ua.User)
+                .Any(ua=>ua.Login== formModel.Login && ua.User.DeletedAt == null))
+            {
+                res[nameof(formModel.Login)] = "Логін вже у вжитку!";
+            }
+
 
 
             //Password
@@ -291,22 +342,22 @@ namespace ASP_421.Controllers
                 res[nameof(formModel.Password)] = "Пароль має містити 12 і більше символів!";
             }
 
-            if((!formModel.Password.Any(char.IsUpper)))
+            if(!formModel.Password.Any(char.IsUpper))
             {
                 res[nameof(formModel.Password)] = "Пароль має містити хоча б одну велику літеру!";
             }
 
-            if((!formModel.Password.Any(char.IsLower)))
+            if(!formModel.Password.Any(char.IsLower))
             {
                 res[nameof(formModel.Password)] = "Пароль має містити хоча б одну маленьку літеру!";
             }
 
-            if((!formModel.Password.Any(char.IsDigit)))
+            if(!formModel.Password.Any(char.IsDigit))
             {
                 res[nameof(formModel.Password)] = "Пароль має містити хоча б один символ! ";
             }
 
-            if ((!formModel.Password.Any(char.IsNumber)))
+            if (!formModel.Password.Any(char.IsNumber))
             {
                 res[nameof(formModel.Password)] = "Пароль має містити хоча б одну цифру!";
             }
