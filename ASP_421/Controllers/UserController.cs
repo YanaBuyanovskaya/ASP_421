@@ -182,6 +182,7 @@ namespace ASP_421.Controllers
                 .UserAccesses
                 .AsNoTracking()          // не моніторити зміни
                 .Include(ua => ua.User) //заповнення навігаційної властивості
+                .Include(ua=>ua.Role)
                 .FirstOrDefault
                 (ua => ua.Login == login);
 

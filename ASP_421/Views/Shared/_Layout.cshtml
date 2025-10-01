@@ -79,12 +79,20 @@
                         .First(c => c.Type == ClaimTypes.NameIdentifier)
                         .Value;
 
+                        String? role = Context.User
+                        .Claims
+                        .FirstOrDefault(c => c.Type == ClaimTypes.Role)
+                        ?.Value;
+
                         <div>
+                        @if(role == "Admin")
+                        {
                             <a asp-controller="Shop"
                                asp-action="Admin"
                                class="btn btn-outline-secondary text-decoration-none text-body"
                                title="Панель управління"><i class="bi bi-speedometer2"></i>
                                </a>
+                        }
 
                             <a asp-controller="User" 
                             asp-action="Profile"
@@ -162,6 +170,7 @@
     <button type="submit" form="auth-form" class="btn btn-primary">Вхід</button>
     </div>
     </form>
+    </div>
     </div>
     </div>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

@@ -25,7 +25,7 @@ options.UseSqlServer(
     builder.Configuration.GetConnectionString("DataContext"))
 );
 
-
+builder.Services.AddScoped<DataAccessor>();
 
 builder.Services.AddDistributedMemoryCache();
 
@@ -66,11 +66,13 @@ app.UseRouting();
 app.UseAuthentication();
 
 app.UseSession();
-app.UseAuthSession();
 app.UseAuthorization();
+app.UseAuthSession();
+
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+app.MapControllers();
 app.Run();

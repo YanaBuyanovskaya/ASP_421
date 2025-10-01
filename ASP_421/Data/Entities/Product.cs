@@ -12,7 +12,7 @@ namespace ASP_421.Data.Entities
         public String? ImageUrl { get; set; } = null!;
         
         [Column(TypeName = "decimal(12,2)")]
-        public double Price { get; set; }
+        public decimal Price { get; set; }
         public int Stock { get; set; }
         public DateTime? DeletedAt { get; set; }
 

@@ -13,7 +13,8 @@ namespace ASP_421.Data
         public DbSet<Entities.Product> Products { get; set; }
         public DbSet<Entities.ProductGroup> ProductGroups { get; set; }
         public DbSet<ASP_421.Data.Entities.Request> Requests { get; set; } = null!;
-       
+      
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -46,6 +47,16 @@ namespace ASP_421.Data
             modelBuilder.Entity<Entities.ProductGroup>()
                 .HasIndex(p => p.Slug)
                 .IsUnique();
+
+            modelBuilder.Entity<ProductGroup>(builder =>
+            {
+                builder.Property(x => x.Slug)
+                .HasMaxLength(64)
+                .IsRequired();
+                builder.HasIndex(x => x.Slug).IsUnique();
+            });
+
+            
             
         }
     }

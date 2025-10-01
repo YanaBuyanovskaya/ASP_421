@@ -28,7 +28,8 @@ namespace ASP_421.Data.MiddleWare
 
             if (context.Session.Keys.Contains("SignIn"))
             {
-                UserAccess userAccess = JsonSerializer.Deserialize<UserAccess>(
+                UserAccess userAccess = 
+                    JsonSerializer.Deserialize<UserAccess>(
                     context.Session.GetString("SignIn")!)!;
 
                 context.User = new ClaimsPrincipal(
@@ -38,7 +39,8 @@ namespace ASP_421.Data.MiddleWare
                             new Claim(ClaimTypes.Name, userAccess.User.Name),
                             new Claim(ClaimTypes.Email, userAccess.User.Email),
                             new Claim("Id", userAccess.User.Id.ToString()),
-                            new Claim(ClaimTypes.NameIdentifier, userAccess.Login)
+                            new Claim(ClaimTypes.NameIdentifier, userAccess.Login),
+                            new Claim(ClaimTypes.Role, userAccess.RoleId)
                     ],
                         nameof(AuthSessionMiddleWare)
                     )
