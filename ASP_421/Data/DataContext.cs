@@ -14,6 +14,8 @@ namespace ASP_421.Data
         public DbSet<Entities.ProductGroup> ProductGroups { get; set; }
         public DbSet<ASP_421.Data.Entities.Request> Requests { get; set; } = null!;
       
+        public DbSet<Entities.Cart> Carts { get; set; }
+        public DbSet<Entities.CartItem> CartItems { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -56,8 +58,17 @@ namespace ASP_421.Data
                 builder.HasIndex(x => x.Slug).IsUnique();
             });
 
-            
-            
+            modelBuilder.Entity<Entities.Cart>()
+                .HasMany(c => c.CartItems)
+                .WithOne(ci => ci.Cart);
+
+            modelBuilder.Entity<Entities.Cart>()
+                .HasOne(c => c.User)
+                .WithMany();
+
+            modelBuilder.Entity<Entities.CartItem>()
+                .HasOne(ci => ci.Product)
+                .WithMany();
         }
     }
 }

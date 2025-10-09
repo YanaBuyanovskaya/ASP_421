@@ -1,7 +1,25 @@
-﻿
-
-    @{
+﻿@model ASP_421.Models.Shop.ShopGroupViewModel
+@{
     ViewData ["Title"]= "Shop";
 }
 
-<h1>Розділ @ViewData["id"]</h1>
+@if(Model.Group == null)
+{
+    <div class="alert alert-danger" role="alert">
+        Запитаної групи не існує або вона була видалена
+    </div>
+}
+else
+{
+    <h1>Товари групи @Model.Group.Name</h1>
+    <div class="my-4 row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 row-cols-xxl-6 g-4">
+        
+    @foreach(var Product in Model.Group.Products)
+    {
+        @Html.DisplayFor(m=>Product)
+    }
+    </div>
+}
+
+
+

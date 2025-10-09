@@ -35,3 +35,7 @@ body {
     width: 100%;
     height: auto;
 }
+
+.btn-add-to-cart{
+    padding: 2px 8px !important;
+}

@@ -38,7 +38,7 @@ namespace ASP_421.Data.MiddleWare
                         [
                             new Claim(ClaimTypes.Name, userAccess.User.Name),
                             new Claim(ClaimTypes.Email, userAccess.User.Email),
-                            new Claim("Id", userAccess.User.Id.ToString()),
+                            new Claim(ClaimTypes.PrimarySid, userAccess.User.Id.ToString()),
                             new Claim(ClaimTypes.NameIdentifier, userAccess.Login),
                             new Claim(ClaimTypes.Role, userAccess.RoleId)
                     ],
