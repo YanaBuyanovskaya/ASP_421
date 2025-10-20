@@ -57,6 +57,7 @@ else
 
 @model ProductDetailsVM
 
+
 @{
     ViewData["Title"] = Model?.Product?.Name ?? "Product";
     // safe image url
@@ -86,12 +87,25 @@ else
             <h2 class="h4">@Model.Product.Name</h2>
             <p class="text-muted">@Model.Product.Description</p>
             <h4 class="mb-3">@Model.Product.Price.ToString("F2")</h4>
-
-            <button type="button"
-                    class="btn btn-success btn-add-to-cart"
-                    data-product-id="@Model.Product.Id">
-                До кошику
-            </button>
+                
+            <div id="product-in-cart">
+                @if(!Model.inCart)
+                {
+                    <button class="btn btn-success"
+                    data-add-to-cart="@Model.Product.Id">
+                        Додати до кошику
+                    </button>
+                }
+                else
+                {
+                    <button type="button"
+                            class="btn btn-success btn-add-to-cart"
+                            data-product-id="@Model.Product.Id">
+                        До кошику
+                    </button>
+                }
+            </div>
+         
         </div>
 
         <div class="col-12 col-md-1">

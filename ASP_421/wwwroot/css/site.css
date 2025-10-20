@@ -39,3 +39,43 @@ body {
 .btn-add-to-cart{
     padding: 2px 8px !important;
 }
+
+.cart-table-header{
+    background-color: #f8f8f8;
+    color: #888;
+    margin-bottom: .5em;
+    padding: .25em 0;
+}
+
+.cart-widget-button{
+    position: relative;
+}
+
+.cart-count {
+    position: absolute;
+    right: -.5em;
+    top: -.5em;
+    border-radius: 50%;
+    background-color: #4cff00;
+    display: block;
+    width: 1.5em;
+    height: 1.5em;
+    padding: 0 .1em .1em .1em;
+    font-size: small;
+}
+
+.cart-quantity{
+    display: inline-flrx;
+    width: 2em;
+    height: 2em;
+    justify-content: center;
+    align-items: center;
+}
+
+.cart-table-footer {
+    font-weight: 700;
+    background-color: #f8f8f8;
+    color: #888;
+    margin-bottom: .5em;
+    padding: .25em 0;
+}

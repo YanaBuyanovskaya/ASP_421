@@ -18,5 +18,8 @@ namespace ASP_421.Data.Entities
         [JsonIgnore]
         public ICollection<UserAccess> Accesses { get; set; } = new List<UserAccess>();
 
+
+        [JsonIgnore]
+        public ICollection<Cart> Carts { get; set; } = [];
     }
 }

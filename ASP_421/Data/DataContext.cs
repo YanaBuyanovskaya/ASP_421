@@ -64,7 +64,7 @@ namespace ASP_421.Data
 
             modelBuilder.Entity<Entities.Cart>()
                 .HasOne(c => c.User)
-                .WithMany();
+                .WithMany(u=>u.Carts);
 
             modelBuilder.Entity<Entities.CartItem>()
                 .HasOne(ci => ci.Product)

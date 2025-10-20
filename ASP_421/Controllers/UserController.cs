@@ -1,4 +1,5 @@
 ﻿using ASP_421.Data;
+using ASP_421.Data.Entities;
 using ASP_421.Models.User;
 using ASP_421.Services.KDF;
 using Microsoft.AspNetCore.Authentication;
@@ -57,6 +58,8 @@ namespace ASP_421.Controllers
             viewModel.User = _dataContext
                 .UserAccesses
                 .Include(ua => ua.User)
+                .ThenInclude(u=>u.Carts)
+                .ThenInclude(c=>c.CartItems)
                 .AsNoTracking()
                 .FirstOrDefault(ua => ua.Login == id)
                 ?.User;

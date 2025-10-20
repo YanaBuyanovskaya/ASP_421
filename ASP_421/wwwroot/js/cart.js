@@ -24,14 +24,14 @@
     }
 
     async function initBadge() {
-        try {
-            const res = await fetch('/api/cart/summary', {
-                headers: csrf ? { 'RequestVerificationToken': csrf } : {}
-            });
-            if (!res.ok) return;
-            const js = await res.json();
-            if (badge && typeof js.totalQty === 'number') badge.textContent = js.totalQty;
-        } catch {  }
+        //try {
+        //    const res = await fetch('/api/cart/summary', {
+        //        headers: csrf ? { 'RequestVerificationToken': csrf } : {}
+        //    });
+        //    if (!res.ok) return;
+        //    const js = await res.json();
+        //    if (badge && typeof js.totalQty === 'number') badge.textContent = js.totalQty;
+        //} catch {  }
     }
 
     async function addToCart(productId) {

@@ -1,6 +1,7 @@
 using ASP_421.Data;
 using ASP_421.Data.Entities;
 using ASP_421.Data.MiddleWare;
+using ASP_421.Middleware;
 using ASP_421.Services.KDF;
 using ASP_421.Services.Random;
 using ASP_421.Services.Storage;
@@ -60,14 +61,21 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseRouting();
+app.UseAuthorization();
+app.UseSession();
+
+
 app.UseStaticFiles();
 
-app.UseRouting();
+
 app.UseAuthentication();
 
-app.UseSession();
-app.UseAuthorization();
+
+
+
 app.UseAuthSession();
+app.UseUserCart();
 
 
 app.MapControllerRoute(

@@ -1,80 +1,118 @@
 ﻿using ASP_421.Data;
-using Microsoft.AspNetCore.Authorization;
+using ASP_421.Data.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
-namespace ASP_421.Controllers.API
+namespace ASP_421.Controllers.Api
 {
     [Route("api/cart")]
     [ApiController]
-    public class CartController (DataAccessor dataAccessor) : ControllerBase
+    public class CartController(DataAccessor dataAccessor) : ControllerBase
     {
         private readonly DataAccessor _dataAccessor = dataAccessor;
-        [Authorize]
+
         [HttpGet("summary")]
-        public IActionResult Summary()
+        public object Summary()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? User.FindFirstValue(ClaimTypes.PrimarySid);
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { Status = "Unauthorized" });
-
-            var total = _dataAccessor.GetCartTotalQty(userId);
-            return Ok(new { totalQty = total });
+            return 1;
         }
-        [HttpPost("{id:guid}")]
-        public IActionResult AddProductToCart(Guid id)
+        [HttpPut]
+        public object Checkout()
         {
-            //задача перевірити чи запит авторизований
-            
-                //задача вилучити дані про авторизацію з контексту HTTP
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                    ?? User.FindFirstValue(ClaimTypes.PrimarySid);
-                //передати роботу на DataAccessor
+            return ExecuteAuthority( _dataAccessor.CheckoutCart);
+        }
 
-                if (string.IsNullOrEmpty(userId))
-                    return Unauthorized(new { Status = "Unauthorized" });
+        [HttpDelete]
+        public object CancelCart()
+        {
+            return ExecuteAuthority( _dataAccessor.CancelCart );
+        }
 
+        [HttpPatch("{id}")]
+        public object ModifyCartItem(String id, int inc)
+        {
+            return ExecuteAuthority(
+                userId => _dataAccessor.ModifyCartItem(userId, id, inc));
+        }
+
+        [HttpDelete("remove/{id}")]
+        public object RemoveItemFromCart(String id)
+        {
+            return ExecuteAuthority(
+                userId => _dataAccessor.RemoveItemFromCart(userId, id));
+        }
+
+        [HttpPost("{id}")]
+        public object AddProductToCart(String id)
+        {
+            return ExecuteAuthority(
+                userId => _dataAccessor.AddProductToCart(userId, id));
+        }
+
+        [HttpPost("repeat/{id}")]
+        public object RepeatCart(String id)
+        {
+            return ExecuteAuthority(
+            userId => _dataAccessor.RepeatCart(userId, id));
+        }
+
+        [HttpPost("restore/{id}")]
+        public object RestoreCart(String id)
+        {
+            return ExecuteAuthority(
+                userId =>_dataAccessor.RestoreCart(userId, id));
+        }
+
+        private object ExecuteAuthority(Action<String> action)
+        {
+            // Перевірити чи запит авторизований
+            if (HttpContext.User.Identity?.IsAuthenticated ?? false)
+            {
+                // Вилучити дані про авторизацію з контексту HTTP
+                String userId = HttpContext.User.Claims
+                    .First(c => c.Type == ClaimTypes.PrimarySid).Value;
+                // Передати роботу на DataAccessor
                 try
                 {
-                    _dataAccessor.AddProductToCart(userId, id.ToString());
-                var total = _dataAccessor.GetCartTotalQty(userId);    
-                return Ok(new 
-                    { 
-                    Code=200,
-                    Status="Ok",
-                    });
-                    
+                    action(userId);
+                    return new
+                    {
+                        Code = 200,
+                        Status = "Ok"
+                    };
                 }
-                catch (ArgumentException ex)
+                catch (Exception ex)
                 {
-                    return BadRequest(new
+                    return new
                     {
                         Code = 400,
                         Status = "Error data validation",
-                        message = ex.Message,
-                    });
+                        ex.Message,
+                    };
                 }
-                catch(KeyNotFoundException ex)
+            }
+            else
+            {
+                return new
                 {
-                    return NotFound(new
-                    {
-                        Status = "Not found",
-                        message = ex.Message
-                    });
-                }
-                catch(Exception)
-                {
-                    return StatusCode(500, new
-                    {
-                        Code= 500,
-                        Status = "Error"
-                    });
-                }
-            }  
+                    Code = 401,
+                    Status = "UnAuthorized"
+                };
+            }
         }
-    
+
     }
-
-
+}
+/* Д.З. Реалізувати аналіз статусів відповіді сервера на додавання 
+ * товару до кошику, виводити відповідні повідомлення користувачу
+ * - для замовлення необхідно увійти в систему
+ * - товар успішно додано
+ * - виникла помилка додавання, повторіть спробу пізніше
+ * * якщо немає авторизації, то не надсилати запит, одразу виводити повідомлення (1)
+ * 
+ * 
+ * До сторінки окремого товару: змінити алгоритм вибірки асоціацій
+ * (вас також може зацікавити) - обирати 6 позицій: 3 з даної групи
+ * (випадково, окрім даного товару) та 3 з інших груп (також випадково)
+ */

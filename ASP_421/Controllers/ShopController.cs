@@ -21,9 +21,16 @@ namespace ASP_421.Controllers
             return View(model);
         }
         [HttpGet]
-        public IActionResult Cart()
+        public IActionResult Cart(String? id)
         {
-            return View();
+
+            ShopCartViewModel model = new()
+            { 
+                Cart = id == null
+                ? HttpContext.Items["UserCart"] as Data.Entities.Cart
+                : _dataAccessor.GetCart(id),
+            };
+            return View(model);
         }
 
         public IActionResult Group(String id)
@@ -40,14 +47,34 @@ namespace ASP_421.Controllers
         public IActionResult Product(String id)
         {
             var product = _dataAccessor.GetProductBySlug(id);
-            ShopProductViewModel model = new()
+
+
+            var model = new ShopProductViewModel
             {
                 SlugOrId = id,
                 Product = product,
-                Associations = product == null ? [] : product.Group.Products 
+                Associations = product == null ? [] : product.Group.Products
             };
+            if (product == null) return NotFound();
+
+            var cart = HttpContext.Items["UserCart"] as Cart;
+
+            if(cart==null && (HttpContext.User.Identity?.IsAuthenticated ?? false))
+            {
+                var userId = HttpContext.User.Claims
+                    .First(c => c.Type == ClaimTypes.PrimarySid)
+                    .Value;
+
+                cart = _dataAccessor.GetActiveCart(userId);
+            }
+
+            var ci = cart?.CartItems?.FirstOrDefault(x => x.ProductId == product.Id);
+            model.inCart = ci != null;
+            model.inCartQuantity = ci?.Quantity;
+
             return View(model);
         }
+        
 
 
         public IActionResult Admin()
@@ -128,6 +155,15 @@ namespace ASP_421.Controllers
                     .ToListAsync();
 
                 alsoLike.AddRange(fill);
+
+                var cart = HttpContext.Items["UserCart"] as Cart;
+                if(cart==null && (User.Identity?.IsAuthenticated ?? false))
+                {
+                    var userId = HttpContext.User.Claims.First(c => c.Type == ClaimTypes.PrimarySid).Value;
+                    cart = _dataAccessor.GetActiveCart(userId);
+                }
+
+                var ci = cart?.CartItems.FirstOrDefault(x => x.ProductId == product.Id);
             }
 
                 var vm = new ProductDetailsVM
@@ -155,7 +191,10 @@ namespace ASP_421.Controllers
     public class ProductDetailsVM
     {
         public Product Product { get; set; } = default!;
-        public List<ProductCard> AlsoLike { get; set; } = new();
+        public bool inCart { get; set; }
+        public int? inCartQuantity { get; set; }
+
+    public List<ProductCard> AlsoLike { get; set; } = new();
     }
 
 

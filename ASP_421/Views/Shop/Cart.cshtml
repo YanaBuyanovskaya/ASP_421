@@ -1,29 +1,130 @@
-﻿@{
+﻿@model ASP_421.Models.Shop.ShopCartViewModel
+
+@{
     ViewData["Title"] = "Cart";
 }
-<h2 class="mb-3">Cart</h2>
-
-<div id="cart-container" class="card p-3 shadow-sm">
-    <div id="cart-msg" class="mb-2"></div>
-    <div id="cart-empty" class="alert alert-info d-none">Ваш кошик пустий!</div>
-
-    <table id="cart-table" class="table d-none">
-        <thead>
-            <tr>
-                <th>Товар</th>
-                <th class="text-end">Ціна</th>
-                <th class="text-center">Кількість</th>
-                <th class="text-end">Всього</th>
-            </tr>
-        </thead>
-
-        <tbody></tbody>
-
-        <tfoot>
-            <tr>
-                <th colspan="3" class="text-end">Загалом: </th>
-                <th class="text-end" id="grand-total">₴ 0.00</th>
-            </tr>
-        </tfoot>
-    </table>
+<div class="text-center">
+    <h1 class="display-4">Мій кошик</h1>
 </div>
+
+@if(!(Context.User.Identity?.IsAuthenticated ?? false))
+{
+    <div> 
+        Перегляд кошика дозволений після входу в систему
+    </div>
+}
+else if(Model.Cart == null)
+{
+    <div>
+        Запитаний кошик не знайдено
+    </div>
+}
+else if(Model.Cart.CartItems.Count()==0)
+{
+    <div>
+        Кошик поки що порожній, отже, додавайте товари з <a asp-action="Index">крамниці</a>
+    </div>
+}
+else
+{
+    bool isOpen = Model.Cart.PaidAt == null && Model.Cart.DeletedAt == null;
+
+    <div class="row cart-table-header">
+        <div class="col col-6">Товар</div>
+        <div class="col col-1">Ціна</div>
+        <div class="col col-3">Кількість</div>
+        <div class="col col-1">Вартість</div>
+    </div>
+    foreach (var item in Model.Cart.CartItems)
+    {
+        <div class="row border-bottom mb-2 pb-2">
+            <div class="col col-1">
+                @if (!String.IsNullOrEmpty(item.Product.Slug))
+                {
+                    <a asp-controller="Shop"
+                    asp-action="Product"
+                    asp-route-slug="@item.Product.Slug"
+                    title="Відкрити картку товару">
+                    <img class="w-100" src="/Storage/Item/@(item.Product.ImageUrl)" alt="@item.Product.Name" />
+                    </a>
+                }
+                else
+                {
+                    <a asp-controller="Shop"
+                    asp-action="Product"
+                       asp-route-id="@item.Product.Id"
+                       title="Відкрити картку товару">
+                       <img class="w-100" src="/Storage/Item/@(item.Product.ImageUrl)" alt="@item.Product.Name"/>
+                    </a>
+                }
+            </div>
+            <div class="col col-5">
+                @item.Product.Name
+                <div class="text-muted">@item.Product.Description</div>
+            </div>
+            <div class="col col-1">@item.Product.Price</div>
+            <div class="col col-3" style="vertical-align:middle">
+                @if (isOpen)
+                {
+                    <i class="bi bi-arrow-down-circle" style="font-size:1.5rem; color:cornflowerblue"
+                    role="button"
+                data-cart-inc="-1"
+                data-cart-item="@item.Id"></i>
+                }
+                <span class="rounded-circle border cart-quantity">@item.Quantity</span>
+                @if(isOpen){
+                <i class="bi bi-arrow-up-circle" style="font-size:1.5rem; color:cornflowerblue"
+                    role="button"
+                    data-cart-inc="1"
+                    data-cart-item="@item.Id"></i>
+                }
+            </div>
+            <div class="col col-1">@item.Price</div>
+            <div class="col col-1"> @* <!---->dz<----!> *@
+                @if (isOpen)
+                {
+                    <button type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    data-remove-from-cart="@item.Id"
+                    data-qty="@item.Quantity"
+                    data-name="@item.Product.Name"
+                    title="Видалити позицію"
+                    aria-label="Видалити позицію">
+                    <i class="bi bi-x-circle"></i>
+                </button>
+                }
+                </div>
+        </div>
+    }
+    <div class="row cart-table-footer">
+        <div class="col col-7">Разом</div>
+        <div class="col col-3">3</div>
+        <div class="col col-1">300</div>
+    </div>
+
+    <div class="row">
+        <div class="col"><a asp-action="Index" class="btn btn-dark w-100">До крамниці</a></div>
+        
+        @if(isOpen)
+        {
+            <div class="col"><button data-cart-cancel="@Model.Cart.Id" class="btn btn-danger w-100">Скасувати</button></div>
+            <div class="col"><button data-cart-checkout="@Model.Cart.Id" class="btn btn-primary w-100">Придбати</button></div>
+        }
+        else if(Model.Cart.PaidAt != null)
+        {
+            <div class="col offset-4">
+                <button 
+                    data-cart-repeat="@Model.Cart.Id" 
+                    class="btn btn-primary w-100">Повторити</button></div>
+        }
+        else
+        {
+            <div class="col offset-4">
+                <button 
+                    data-cart-restore="@Model.Cart.Id" 
+                    class="btn btn-success w-100">Відновити</button></div>
+        }
+    </div>
+}
+
+                 

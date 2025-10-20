@@ -1,33 +1,48 @@
 ﻿@model ASP_421.Data.Entities.Product
+@{
+    var Cart = Context.Items["UserCart"] as ASP_421.Data.Entities.Cart;
+    bool isInCart = Cart?.CartItems.Any(ci => ci.ProductId == Model.Id) ?? false;
+}
 
 <div class="col">
     <a class="h-100 nav-link"
        asp-controller="Shop"
        asp-action="Product"
        asp-route-id="@(Model.Slug ?? Model.Id.ToString())">
-
-        <div class="card h-100">
+     
+        <div class="card h-100 position-relative">
             <img src="/Storage/Item/@Model.ImageUrl"
                  class="card-img-top"
                  alt="@Model.Name" />
 
             <div class="card-body">
-                <h5 class="card-title">@Model.Name</h5>
+                <h5 class="card-title mb-1">@Model.Name</h5>
                 <p class="card-text">@Model.Description</p>
             </div>
 
             <div class="card-footer d-flex justify-content-between align-items-center">
                 <span>₴ @Model.Price.ToString("F2")</span>
                 <span>
-                    <button 
+                    @if (isInCart)
+                    {
+                     <button data-goto="cart"
+                            class="btn btn-success btn-add-to-cart">
+                            <i class="bi bi-cart-check"></i>
+                     </button>    
+                    
+                    }
+
+                    else{
+                    <button
                         type="button" 
                         class="btn btn-outline-success btn-add-to-cart"
                         data-add-to-cart="@Model.Id">
                         <i class="bi bi-cart-plus"></i>
                     </button>
+                    }
                 </span>
             </div>
         </div>
-    </a>
+        </a>
 </div>
 
