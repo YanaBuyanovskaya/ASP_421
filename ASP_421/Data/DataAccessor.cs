@@ -33,6 +33,19 @@ namespace ASP_421.Data
         {
             Cart activeCart = this.GetActiveCart(userId)
                 ?? throw new Exception("User has no active cart");
+            foreach(var ci in activeCart.CartItems)
+            {
+                var product = _dataContext.Products
+                    .SingleOrDefault(p => p.Id == ci.ProductId)
+                    ?? throw new Exception($"Product {ci.ProductId} not found.");
+
+                if(product.Stock< ci.Quantity)
+                {
+                    throw new InvalidOperationException(
+                        $"Недостатньо залишку для {product.Name}"); 
+                }
+                product.Stock -= ci.Quantity;
+            }
             activeCart.PaidAt = DateTime.Now;
             _dataContext.SaveChanges();
         }
@@ -170,6 +183,18 @@ namespace ASP_421.Data
             //перевіряємо чи є у користувача відкритий(активний) кошик
             //якщо ні, то відкриваємо(створюємо) новий
             // якщо так то додаємо до нього товари з повторюваного кошику
+            if(cart.UserId!=userGuid)
+            {
+                throw new UnauthorizedAccessException("Неможливо повторити кошик" +
+                    "іншого користувача");
+            }
+
+            var productIds = cart.CartItems.Select(ci => ci.ProductId).Distinct().ToList();
+            var products = _dataContext.Products
+                .Where(p => productIds.Contains(p.Id))
+                .ToDictionary(p => p.Id, p => p);
+
+            
             Cart? activeCart = this.GetActiveCart(userId);
 
             if (activeCart == null)
@@ -179,36 +204,43 @@ namespace ASP_421.Data
                     Id = Guid.NewGuid(),
                     UserId = userGuid,
                     CreatedAt = DateTime.Now,
+                    CartItems = new List<CartItem>()
                 };
                 _dataContext.Carts.Add(activeCart);
             }
-
-            foreach(CartItem oldCartItem in cart.CartItems)
+            else
             {
-                CartItem? cartItem = activeCart
-                .CartItems
-                .FirstOrDefault(ci => ci.ProductId == oldCartItem.ProductId);
-
-                if (cartItem == null)
-                {
-                    cartItem = new()
-                    {
-                        CartId = activeCart.Id,
-                        ProductId = oldCartItem.ProductId,
-                        Quantity = oldCartItem.Quantity,
-                        Product = oldCartItem.Product,
-                    };
-                    _dataContext.CartItems.Add(cartItem);
-                }
-                else
-                {
-                    cartItem.Quantity = oldCartItem.Quantity;
-                }
-                // Перераховуємо ціну всього кошику з урахуванням можливих акцій
-                CalcCartPrice(activeCart);
-                // зберігаємо зміни
-                _dataContext.SaveChanges();
+                _dataContext.Entry(activeCart).Collection(c => c.CartItems).Load();
+                activeCart.CartItems ??= new List<CartItem>();
             }
+
+            foreach (CartItem oldCartItem in cart.CartItems)
+                {
+                    CartItem? cartItem = activeCart
+                    .CartItems
+                    .FirstOrDefault(ci => ci.ProductId == oldCartItem.ProductId);
+
+                    if (cartItem == null)
+                    {
+                        cartItem = new()
+                        {
+                            CartId = activeCart.Id,
+                            ProductId = oldCartItem.ProductId,
+                            Quantity = oldCartItem.Quantity,
+                            Product = oldCartItem.Product,
+                        };
+                        _dataContext.CartItems.Add(cartItem);
+                        activeCart.CartItems.Add(cartItem);
+                    }
+                    else
+                    {
+                        cartItem.Quantity = oldCartItem.Quantity;
+                    }
+                    // Перераховуємо ціну всього кошику з урахуванням можливих акцій
+                    CalcCartPrice(activeCart);
+                    // зберігаємо зміни
+                    _dataContext.SaveChanges();
+                }
             
 
         }
