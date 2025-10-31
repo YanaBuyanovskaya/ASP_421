@@ -10,6 +10,7 @@ namespace ASP_421.Data.Entities
         public String? Description { get; set; } = null!;
         public String? Slug { get; set; } = null!; //Slug - частина URL адреси(аналог ідентифікатора), яка складається з читабельних для людини слів, допомагає користувачам та пошуковим системам зрозуміти її призначення
         public String? ImageUrl { get; set; } = null!;
+        public String? Url { get; set; } = null!; //повна адреса товару
         
         [Column(TypeName = "decimal(12,2)")]
         public decimal Price { get; set; }
